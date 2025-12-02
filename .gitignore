@@ -1,6 +1,10 @@
 # Documentation (keep local only)
-instructions.md
-CLAUDE.md
+docs/
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
 
 # Python
 __pycache__/
