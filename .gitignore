@@ -17,6 +17,7 @@ docs/
 *.webp
 *.tiff
 *.tif
+screen-caps*/
 
 # Python
 __pycache__/
