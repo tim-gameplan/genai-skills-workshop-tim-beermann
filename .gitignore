@@ -6,6 +6,18 @@ docs/
 *.tar
 *.tar.gz
 
+# Images
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.svg
+*.ico
+*.webp
+*.tiff
+*.tif
+
 # Python
 __pycache__/
 *.py[cod]
