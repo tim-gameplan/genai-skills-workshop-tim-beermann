@@ -1,0 +1,15 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.ipynb_checkpoints
+*.ipynb
+.DS_Store
+test_*.py
+evaluation_*.csv
+backup/
+final-options/
+*.md
+architecture.txt
