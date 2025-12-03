@@ -1026,15 +1026,16 @@ class AlaskaSnowAgent:
 
         # Vector search SQL
         # Uses VECTOR_SEARCH() function to find nearest neighbors
+        # Note: VECTOR_SEARCH returns 'base' struct containing table columns
         sql = f"""
         SELECT
-          answer,
+          base.answer,
           (1 - distance) as relevance_score
         FROM VECTOR_SEARCH(
           TABLE `{PROJECT_ID}.{DATASET_ID}.snow_vectors`,
           'embedding',
           (
-            SELECT ml_generate_embedding_result, '{safe_query}' AS query
+            SELECT ml_generate_embedding_result
             FROM ML.GENERATE_EMBEDDING(
               MODEL `{PROJECT_ID}.{DATASET_ID}.embedding_model`,
               (SELECT '{safe_query}' AS content)
@@ -1888,10 +1889,10 @@ def retrieve_context(query, top_k=3):
     safe_query = query.replace("'", "\\\\'")
 
     sql = f"""
-    SELECT answer, (1 - distance) as score
+    SELECT base.answer, (1 - distance) as score
     FROM VECTOR_SEARCH(
         TABLE `{{PROJECT_ID}}.{{DATASET_ID}}.snow_vectors`, 'embedding',
-        (SELECT ml_generate_embedding_result, '{{safe_query}}' AS query
+        (SELECT ml_generate_embedding_result
          FROM ML.GENERATE_EMBEDDING(
              MODEL `{{PROJECT_ID}}.{{DATASET_ID}}.embedding_model`,
              (SELECT '{{safe_query}}' AS content))),
@@ -2799,10 +2800,10 @@ def initialize_agent():
         def retrieve(self, query):
             safe_query = query.replace("'", "\\\\'")
             sql = f"""
-            SELECT answer, (1 - distance) as score
+            SELECT base.answer, (1 - distance) as score
             FROM VECTOR_SEARCH(
                 TABLE `{PROJECT_ID}.{DATASET_ID}.snow_vectors`, 'embedding',
-                (SELECT ml_generate_embedding_result, '{safe_query}' AS query
+                (SELECT ml_generate_embedding_result
                  FROM ML.GENERATE_EMBEDDING(
                      MODEL `{PROJECT_ID}.{DATASET_ID}.embedding_model`,
                      (SELECT '{safe_query}' AS content))),
