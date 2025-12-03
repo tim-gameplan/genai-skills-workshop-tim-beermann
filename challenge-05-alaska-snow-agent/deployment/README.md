@@ -38,7 +38,11 @@ The Docker container now includes:
 
 ## Local Testing
 
+### Option 1: Run Python directly
 ```bash
+# Set environment variables
+export PROJECT_ID=$(gcloud config get-value project)
+
 # Run validation first
 python validate_resources.py
 
@@ -46,13 +50,32 @@ python validate_resources.py
 streamlit run app.py
 ```
 
+### Option 2: Test with Docker (recommended)
+```bash
+# Build and run with Docker (tests the actual deployment)
+./run_docker_local.sh
+
+# Or manually:
+docker build -t alaska-snow-agent .
+docker run -p 8080:8080 \
+  -e PROJECT_ID=$(gcloud config get-value project) \
+  -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/keys/key.json \
+  -v ~/.config/gcloud/application_default_credentials.json:/tmp/keys/key.json:ro \
+  alaska-snow-agent
+```
+
 ## Cloud Run Deployment
 
 ```bash
+# IMPORTANT: Must set PROJECT_ID environment variable
 gcloud run deploy alaska-snow-agent \
   --source . \
   --region us-central1 \
   --platform managed \
   --allow-unauthenticated \
-  --set-env-vars PROJECT_ID=$(gcloud config get-value project)
+  --timeout 300 \
+  --set-env-vars PROJECT_ID=$(gcloud config get-value project) \
+  --quiet
 ```
+
+The `--set-env-vars PROJECT_ID=...` flag is **required** - the container needs this to connect to BigQuery.

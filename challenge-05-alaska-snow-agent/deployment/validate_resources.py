@@ -6,7 +6,6 @@ Checks if all required GCP resources exist before starting the app
 import os
 import sys
 from google.cloud import bigquery
-import subprocess
 
 def validate_environment():
     """Validate required environment variables and GCP resources."""
@@ -16,18 +15,13 @@ def validate_environment():
 
     # 1. Check PROJECT_ID
     project_id = os.environ.get("PROJECT_ID")
-    if not project_id:
-        try:
-            project_id = subprocess.check_output(
-                "gcloud config get-value project",
-                shell=True
-            ).decode().strip()
-        except:
-            pass
 
     if not project_id:
-        print("❌ ERROR: PROJECT_ID not set and couldn't detect from gcloud")
-        print("   Set PROJECT_ID environment variable or run: gcloud config set project YOUR_PROJECT")
+        print("❌ ERROR: PROJECT_ID environment variable is required")
+        print("   Set PROJECT_ID environment variable")
+        print()
+        print("   For Cloud Run deployment, use:")
+        print("   --set-env-vars PROJECT_ID=your-project-id")
         return False
 
     print(f"✅ Project ID: {project_id}")
