@@ -201,7 +201,35 @@ print(f"   Dataset: {DATASET_ID}")
 print(f"   Data Source: {SOURCE_BUCKET}")
 print()
 
-# 1. Initialize Google Cloud Clients
+# 1. Enable Required APIs
+print("🔧 Enabling required Google Cloud APIs...")
+apis = [
+    "aiplatform.googleapis.com",
+    "bigquery.googleapis.com",
+    "run.googleapis.com",
+    "cloudbuild.googleapis.com",
+    "geocoding-backend.googleapis.com",
+    "modelarmor.googleapis.com"
+]
+
+for api in apis:
+    print(f"   Enabling {api}...", end=" ")
+    result = subprocess.run(
+        f"gcloud services enable {api} --project={PROJECT_ID}",
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+    if result.returncode == 0:
+        print("✅")
+    else:
+        print("⚠️  (may already be enabled)")
+
+print()
+print("   ✅ All required APIs enabled")
+print()
+
+# 2. Initialize Google Cloud Clients
 print("⚙️  Initializing Google Cloud clients...")
 vertexai.init(project=PROJECT_ID, location=REGION)
 bq_client = bigquery.Client(project=PROJECT_ID, location=REGION)
@@ -211,7 +239,7 @@ print("   ✅ BigQuery client initialized")
 print("   ✅ Cloud Storage client initialized")
 print()
 
-# 2. Grant Critical Permissions
+# 3. Grant Critical Permissions
 # This step prevents the common "400 Permission Denied" error when BigQuery
 # tries to call Vertex AI for embedding generation
 SERVICE_ACCOUNT = "bqcx-281600971548-ntww@gcp-sa-bigquery-condel.iam.gserviceaccount.com"
@@ -232,7 +260,7 @@ else:
     print(f"   ⚠️  Permission grant returned: {result.stderr}")
     print("   (This is usually okay if permissions already exist)")
 
-# 3. Wait for IAM propagation
+# 4. Wait for IAM propagation
 # IAM changes can take up to 80 seconds to propagate globally
 print()
 print("⏳ Waiting 10 seconds for IAM propagation...")
@@ -253,6 +281,16 @@ print("=" * 70)
    Region: us-central1
    Dataset: alaska_snow_capstone
    Data Source: gs://labs.roitraining.com/alaska-dept-of-snow
+
+🔧 Enabling required Google Cloud APIs...
+   Enabling aiplatform.googleapis.com... ✅
+   Enabling bigquery.googleapis.com... ✅
+   Enabling run.googleapis.com... ✅
+   Enabling cloudbuild.googleapis.com... ✅
+   Enabling geocoding-backend.googleapis.com... ✅
+   Enabling modelarmor.googleapis.com... ✅
+
+   ✅ All required APIs enabled
 
 ⚙️  Initializing Google Cloud clients...
    ✅ Vertex AI client initialized
