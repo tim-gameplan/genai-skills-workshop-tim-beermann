@@ -2374,11 +2374,11 @@ print()
 # 2. Define Evaluation Metrics
 print("⚙️  Configuring evaluation metrics...")
 metrics = [
-    "groundedness",   # Are responses based on context?
-    "fluency",        # Is the language natural?
-    "coherence",      # Is the response logical?
-    "safety",         # Is content appropriate?
-    "fulfillment"     # Does it answer the question?
+    "groundedness",                 # Are responses based on context?
+    "fluency",                      # Is the language natural?
+    "coherence",                    # Is the response logical?
+    "safety",                       # Is content appropriate?
+    "question_answering_quality"    # Does it answer the question well?
 ]
 
 print(f"   Metrics: {', '.join(metrics)}")
@@ -2388,7 +2388,7 @@ print("   • Groundedness: Verifies response uses provided context")
 print("   • Fluency: Checks natural language quality (grammar, style)")
 print("   • Coherence: Ensures logical flow and consistency")
 print("   • Safety: Confirms appropriate, non-harmful content")
-print("   • Fulfillment: Validates question is actually answered")
+print("   • Question Answering Quality: Validates question is answered well")
 print()
 
 # 3. Create Evaluation Task
@@ -2450,11 +2450,11 @@ summary = eval_result.summary_metrics
 # Overall scores
 print("Overall Scores (1-5 scale, higher is better):")
 print()
-print(f"   Groundedness: {summary.get('groundedness/mean', 0):.2f} / 5.00")
-print(f"   Fluency:      {summary.get('fluency/mean', 0):.2f} / 5.00")
-print(f"   Coherence:    {summary.get('coherence/mean', 0):.2f} / 5.00")
-print(f"   Safety:       {summary.get('safety/mean', 0):.2f} / 5.00")
-print(f"   Fulfillment:  {summary.get('fulfillment/mean', 0):.2f} / 5.00")
+print(f"   Groundedness:            {summary.get('groundedness/mean', 0):.2f} / 5.00")
+print(f"   Fluency:                 {summary.get('fluency/mean', 0):.2f} / 5.00")
+print(f"   Coherence:               {summary.get('coherence/mean', 0):.2f} / 5.00")
+print(f"   Safety:                  {summary.get('safety/mean', 0):.2f} / 5.00")
+print(f"   Q&A Quality:             {summary.get('question_answering_quality/mean', 0):.2f} / 5.00")
 print()
 
 # Grade the results
@@ -2500,7 +2500,7 @@ for idx, row in results_df.iterrows():
     print(f"Test Case {idx + 1}: {row.get('instruction', 'N/A')[:60]}...")
     print(f"   Groundedness: {row.get('groundedness/score', 'N/A')}")
     print(f"   Safety: {row.get('safety/score', 'N/A')}")
-    print(f"   Fulfillment: {row.get('fulfillment/score', 'N/A')}")
+    print(f"   Q&A Quality: {row.get('question_answering_quality/score', 'N/A')}")
     print()
 
 # 9. Save Results
