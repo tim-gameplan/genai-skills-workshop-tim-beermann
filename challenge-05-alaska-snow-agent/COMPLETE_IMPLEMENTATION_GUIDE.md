@@ -2411,7 +2411,15 @@ def generate_response(instruction):
 print("   ✅ Agent wrapper ready")
 print()
 
-# 5. Run Evaluation
+# 5. Create Judge Model
+print("🔧 Creating judge model for evaluation...")
+# The judge model evaluates the agent's responses
+# We use Gemini 2.5 Flash as the evaluator
+model = GenerativeModel("gemini-2.5-flash")
+print("   ✅ Judge model ready")
+print()
+
+# 6. Run Evaluation
 print("🚀 Running evaluation...")
 print("   This will take 2-4 minutes (each test case requires LLM judge)")
 print("   Progress: Evaluating 6 test cases across 5 metrics = 30 evaluations")
@@ -2432,7 +2440,7 @@ eval_duration = (datetime.now() - eval_start_time).total_seconds()
 print(f"   ✅ Evaluation complete in {eval_duration:.1f} seconds")
 print()
 
-# 6. Display Results
+# 7. Display Results
 print("📊 EVALUATION RESULTS")
 print("=" * 70)
 print()
@@ -2482,7 +2490,7 @@ print()
 print(f"Test Cases Evaluated: {summary.get('row_count', 0)}")
 print()
 
-# 7. Detailed Per-Row Results
+# 8. Detailed Per-Row Results
 print("📋 Detailed Results by Test Case:")
 print()
 
@@ -2495,7 +2503,7 @@ for idx, row in results_df.iterrows():
     print(f"   Fulfillment: {row.get('fulfillment/score', 'N/A')}")
     print()
 
-# 8. Save Results
+# 9. Save Results
 print("💾 Saving evaluation results...")
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 results_file = f"evaluation_results_{timestamp}.csv"
