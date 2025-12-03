@@ -2,8 +2,9 @@
 """
 Generate complete Challenge 5 Jupyter Notebook from COMPLETE_IMPLEMENTATION_GUIDE.md
 
-This script extracts all 11 code cells from the implementation guide and creates
-a properly structured .ipynb file ready for execution in Google Colab.
+This script extracts all 12 code cells (Cell 0 through Cell 11) from the
+implementation guide and creates a properly structured .ipynb file ready for
+execution in Google Colab.
 """
 
 import json
@@ -70,6 +71,7 @@ def extract_cell_code(content, cell_number):
     """Extract code for a specific cell from markdown."""
     # Different patterns for different cells
     patterns = {
+        0: r'### Cell 0: Package Installation.*?```python\n(.*?)\n```',
         1: r'### Cell 1: Environment Setup.*?```python\n(.*?)\n```',
         2: r'### Cell 2: Data Ingestion.*?```python\n(.*?)\n```',
         3: r'### Cell 3: Build Vector Search.*?```python\n(.*?)\n```',
@@ -150,18 +152,20 @@ A production-quality AI chatbot that:
 
 ## ⚡ Quick Start
 
-1. Update `PROJECT_ID` in Cell 1
-2. Run all cells sequentially
-3. Wait for each cell to complete before proceeding
-4. Monitor output for errors
-5. Test agent with sample queries
+1. Run Cell 0 to install all required packages
+2. Update `PROJECT_ID` in Cell 1
+3. Run all remaining cells sequentially
+4. Wait for each cell to complete before proceeding
+5. Monitor output for errors
+6. Test agent with sample queries
 
 ---"""
 
     notebook["cells"].append(markdown_cell(title_md))
 
-    # Extract and add all 11 cells
+    # Extract and add all 12 cells (Cell 0 through Cell 11)
     cell_names = [
+        "Cell 0: Package Installation",
         "Cell 1: Environment Setup & Permissions",
         "Cell 2: Data Ingestion with Dynamic Discovery",
         "Cell 3: Build Vector Search Index (RAG Foundation)",
@@ -175,14 +179,14 @@ A production-quality AI chatbot that:
         "Cell 11: Comprehensive README Documentation"
     ]
 
-    for i in range(1, 12):
-        print(f"📦 Extracting Cell {i}: {cell_names[i-1]}...", end=" ")
+    for i in range(0, 12):
+        print(f"📦 Extracting Cell {i}: {cell_names[i]}...", end=" ")
 
         code = extract_cell_code(content, i)
 
         if code:
             # Add markdown header
-            notebook["cells"].append(markdown_cell(f"## {cell_names[i-1]}"))
+            notebook["cells"].append(markdown_cell(f"## {cell_names[i]}"))
 
             # Add code cell
             notebook["cells"].append(code_cell(code))
@@ -209,10 +213,11 @@ A production-quality AI chatbot that:
     print()
     print(f"📝 Next Steps:")
     print(f"   1. Open in Google Colab or Jupyter Lab")
-    print(f"   2. Update PROJECT_ID in Cell 1")
-    print(f"   3. Run all cells sequentially (Runtime → Run all)")
-    print(f"   4. Monitor output and fix any errors")
-    print(f"   5. Test the agent with sample queries")
+    print(f"   2. Run Cell 0 to install all packages (takes 1-2 minutes)")
+    print(f"   3. Update PROJECT_ID in Cell 1")
+    print(f"   4. Run all remaining cells sequentially (Runtime → Run all)")
+    print(f"   5. Monitor output and fix any errors")
+    print(f"   6. Test the agent with sample queries")
     print()
     print("=" * 70)
 

@@ -160,6 +160,111 @@ GOOGLE_MAPS_API_KEY = "YOUR_API_KEY_HERE"  # Get from Google Cloud Console
 
 ---
 
+### Cell 0: Package Installation
+
+**Purpose:** Install all required Python packages upfront to avoid interruptions during execution.
+
+**Why This Matters:**
+- Consolidates all package installations in one place
+- Prevents pip install commands scattered throughout the notebook
+- Ensures all dependencies are available before they're needed
+- Faster execution (install once, use everywhere)
+
+**Copy this code to your first notebook cell:**
+
+```python
+# =============================================================================
+# CELL 0: Package Installation
+# =============================================================================
+
+print("📦 Installing Required Python Packages")
+print("=" * 70)
+print()
+
+import subprocess
+import sys
+
+# Define all required packages
+packages = [
+    "google-cloud-aiplatform[evaluation]>=1.38.0",  # Includes vertexai + evaluation tools
+    "google-cloud-bigquery>=3.11.0",
+    "google-cloud-storage>=2.10.0",
+    "google-cloud-modelarmor>=0.3.0",
+    "requests>=2.31.0",
+    "pytest>=7.4.0",
+    "pytest-html>=3.2.0",
+    "pandas>=2.0.0",
+]
+
+print("Installing packages:")
+for pkg in packages:
+    print(f"   - {pkg}")
+print()
+
+# Install all packages quietly
+print("⏳ Installing (this may take 1-2 minutes)...")
+result = subprocess.run(
+    [sys.executable, "-m", "pip", "install", "--quiet"] + packages,
+    capture_output=True,
+    text=True
+)
+
+if result.returncode == 0:
+    print("✅ All packages installed successfully!")
+else:
+    print("⚠️  Installation completed with warnings:")
+    print(result.stderr)
+
+print()
+print("📋 Installed packages:")
+print("   ✅ google-cloud-aiplatform (Vertex AI + Evaluation)")
+print("   ✅ google-cloud-bigquery (BigQuery)")
+print("   ✅ google-cloud-storage (Cloud Storage)")
+print("   ✅ google-cloud-modelarmor (Security)")
+print("   ✅ requests (HTTP client)")
+print("   ✅ pytest + pytest-html (Testing)")
+print("   ✅ pandas (Data manipulation)")
+print()
+print("=" * 70)
+```
+
+**Expected Output:**
+```
+📦 Installing Required Python Packages
+======================================================================
+
+Installing packages:
+   - google-cloud-aiplatform[evaluation]>=1.38.0
+   - google-cloud-bigquery>=3.11.0
+   - google-cloud-storage>=2.10.0
+   - google-cloud-modelarmor>=0.3.0
+   - requests>=2.31.0
+   - pytest>=7.4.0
+   - pytest-html>=3.2.0
+   - pandas>=2.0.0
+
+⏳ Installing (this may take 1-2 minutes)...
+✅ All packages installed successfully!
+
+📋 Installed packages:
+   ✅ google-cloud-aiplatform (Vertex AI + Evaluation)
+   ✅ google-cloud-bigquery (BigQuery)
+   ✅ google-cloud-storage (Cloud Storage)
+   ✅ google-cloud-modelarmor (Security)
+   ✅ requests (HTTP client)
+   ✅ pytest + pytest-html (Testing)
+   ✅ pandas (Data manipulation)
+
+======================================================================
+```
+
+**Troubleshooting:**
+- If you see warnings about existing packages, that's normal
+- Installation takes 1-2 minutes in Google Colab
+- If it fails, check your internet connection and retry
+
+---
+
 ### Cell 1: Environment Setup & Permissions
 
 **Purpose:** Initialize Google Cloud clients and grant necessary IAM permissions to avoid common "Permission Denied" errors.
@@ -328,8 +433,9 @@ print("=" * 70)
 **Technical Details:**
 - Uses Cloud Storage client to list bucket contents
 - Finds first `.csv` file in the specified path
-- Uses BigQuery's `autodetect=True` to infer schema
+- Uses **explicit schema** (`question`, `answer`) to ensure proper column names
 - Writes data to `alaska_snow_capstone.snow_faqs_raw` table
+- **Critical:** Explicit schema prevents autodetect from creating generic column names like `string_field_0`
 
 **Copy this code to your second notebook cell:**
 
@@ -396,12 +502,16 @@ print()
 print("📤 Loading data into BigQuery...")
 table_ref = bq_client.dataset(DATASET_ID).table("snow_faqs_raw")
 
-# Job configuration
-# - autodetect: Automatically infer schema from CSV header
-# - skip_leading_rows: Skip CSV header row
-# - write_disposition: Overwrite table if it exists
+# Job configuration with EXPLICIT schema
+# We define the schema explicitly to ensure correct column names
+# (autodetect can create generic names like string_field_0)
+schema = [
+    bigquery.SchemaField("question", "STRING"),
+    bigquery.SchemaField("answer", "STRING"),
+]
+
 job_config = bigquery.LoadJobConfig(
-    autodetect=True,  # Let BigQuery figure out columns and types
+    schema=schema,  # Explicitly define column names
     source_format=bigquery.SourceFormat.CSV,
     skip_leading_rows=1,  # Skip header row
     write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE  # Replace existing
@@ -1727,14 +1837,9 @@ print("🧪 Creating Comprehensive Test Suite")
 print("=" * 70)
 print()
 
-# First, install pytest if needed
-print("📦 Installing pytest...")
 import subprocess
-subprocess.run(["pip", "install", "--quiet", "pytest", "pytest-html"], check=True)
-print("   ✅ pytest installed")
-print()
 
-# Create test file using %%writefile magic
+# Create test file
 print("📝 Creating test_alaska_snow_agent.py...")
 print()
 
@@ -2223,12 +2328,8 @@ from vertexai.evaluation import EvalTask
 import pandas as pd
 import pprint
 from datetime import datetime
-
-# Install evaluation library if needed
-print("📦 Ensuring evaluation library is installed...")
-subprocess.run([sys.executable, "-m", "pip", "install", "--quiet", "google-cloud-aiplatform[evaluation]"], check=True)
-print("   ✅ Evaluation library ready")
-print()
+import subprocess
+import sys
 
 # 1. Create Evaluation Dataset
 print("📝 Creating evaluation dataset...")
