@@ -9,14 +9,27 @@ from google.cloud import bigquery, modelarmor_v1
 from vertexai.generative_models import GenerativeModel
 import os
 import datetime
+import subprocess
 
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
 
-PROJECT_ID = os.environ.get("PROJECT_ID", "qwiklabs-gcp-03-ba43f2730b93")
+# Auto-detect project ID from gcloud if not set
+def get_project_id():
+    if "PROJECT_ID" in os.environ:
+        return os.environ["PROJECT_ID"]
+    try:
+        return subprocess.check_output(
+            "gcloud config get-value project",
+            shell=True
+        ).decode().strip()
+    except:
+        return None
+
+PROJECT_ID = get_project_id()
 REGION = os.environ.get("REGION", "us-central1")
-DATASET_ID = "alaska_snow_capstone"
+DATASET_ID = os.environ.get("DATASET_ID", "alaska_snow_capstone")
 
 # =============================================================================
 # PAGE CONFIGURATION

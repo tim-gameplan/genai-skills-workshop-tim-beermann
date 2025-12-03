@@ -1,5 +1,5 @@
-streamlit==1.32.0
-google-cloud-aiplatform==1.128.0
-google-cloud-bigquery==3.38.0
-google-cloud-modelarmor==0.3.0
-requests==2.31.0
+streamlit>=1.40.0
+google-cloud-aiplatform>=1.128.0
+google-cloud-bigquery>=3.38.0
+google-cloud-modelarmor>=0.3.0
+requests>=2.31.0
