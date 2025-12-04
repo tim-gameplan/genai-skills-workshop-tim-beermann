@@ -6,10 +6,11 @@ Streamlit Web Application
 import streamlit as st
 import vertexai
 from google.cloud import bigquery, modelarmor_v1
-from vertexai.generative_models import GenerativeModel
+from vertexai.generative_models import GenerativeModel, FunctionDeclaration, Tool
 import os
 import datetime
 import subprocess
+import requests
 
 # =============================================================================
 # CONFIGURATION
@@ -89,9 +90,6 @@ class AlaskaSnowAgentEnhanced:
         # Initialize Vertex AI
         vertexai.init(project=project_id, location=region)
 
-        # Gemini 2.5 Flash for generation
-        self.model = GenerativeModel("gemini-2.5-flash")
-
         # BigQuery client
         self.bq_client = bigquery.Client(project=project_id, location=region)
         self.project_id = project_id
@@ -107,6 +105,31 @@ class AlaskaSnowAgentEnhanced:
         # External API configuration
         self.geocoding_api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
         self.nws_base_url = "https://api.weather.gov"
+
+        # Define function declarations for Gemini function calling
+        get_weather_func = FunctionDeclaration(
+            name="get_weather_forecast",
+            description="Get current weather forecast for a specific location in Alaska",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "City or address in Alaska (e.g., 'Anchorage', 'Fairbanks', '123 Main St')"
+                    }
+                },
+                "required": ["location"]
+            }
+        )
+
+        # Create tool with function declarations
+        weather_tool = Tool(function_declarations=[get_weather_func])
+
+        # Gemini 2.5 Flash with function calling enabled
+        self.model = GenerativeModel(
+            "gemini-2.5-flash",
+            tools=[weather_tool]
+        )
 
         # System instruction for consistent behavior
         self.system_instruction = """
@@ -225,7 +248,6 @@ class AlaskaSnowAgentEnhanced:
             return None, None
 
         try:
-            import requests
             url = "https://maps.googleapis.com/maps/api/geocode/json"
             params = {
                 "address": f"{address}, Alaska, USA",
@@ -249,19 +271,24 @@ class AlaskaSnowAgentEnhanced:
             self._log("ERROR", f"Geocoding API error: {e}")
             return None, None
 
-    def get_weather_forecast(self, lat, lng):
+    def get_weather_forecast(self, location):
         """
-        Get weather forecast from National Weather Service API.
+        Get weather forecast for a location (with automatic geocoding).
 
         Args:
-            lat: Latitude
-            lng: Longitude
+            location: City name or address in Alaska
 
         Returns:
-            dict: Forecast data or None if unavailable
+            str: Human-readable weather forecast or error message
         """
+        # First, geocode the location
+        lat, lng = self.get_coordinates(location)
+
+        if not lat or not lng:
+            return f"Could not find coordinates for {location}. Please provide a valid Alaska location."
+
+        # Then get the weather for those coordinates
         try:
-            import requests
             # Step 1: Get grid point information
             point_url = f"{self.nws_base_url}/points/{lat},{lng}"
             headers = {"User-Agent": "AlaskaDeptOfSnow/1.0"}
@@ -281,23 +308,18 @@ class AlaskaSnowAgentEnhanced:
             # Get current period (first forecast)
             current_period = forecast_data["properties"]["periods"][0]
 
-            self._log("WEATHER", f"Forecast for ({lat:.4f}, {lng:.4f}): {current_period['shortForecast']}")
+            self._log("WEATHER", f"Forecast for {location}: {current_period['shortForecast']}")
 
-            return {
-                "name": current_period["name"],
-                "temperature": current_period["temperature"],
-                "temperatureUnit": current_period["temperatureUnit"],
-                "shortForecast": current_period["shortForecast"],
-                "detailedForecast": current_period["detailedForecast"]
-            }
+            # Return human-readable forecast
+            return f"{current_period['name']}: {current_period['shortForecast']}. Temperature: {current_period['temperature']}°{current_period['temperatureUnit']}. {current_period['detailedForecast']}"
 
         except Exception as e:
             self._log("ERROR", f"Weather API error: {e}")
-            return None
+            return f"Unable to fetch weather forecast for {location}. The National Weather Service API may be unavailable."
 
     def chat(self, user_query):
         """
-        Main chat interface - orchestrates the full RAG pipeline.
+        Main chat interface - orchestrates RAG + function calling pipeline.
         """
         self._log("CHAT_START", f"Query: {user_query}")
 
@@ -305,10 +327,10 @@ class AlaskaSnowAgentEnhanced:
         if not self.sanitize(user_query, "input"):
             return "❌ Your request was blocked by our security policy. Please rephrase your question."
 
-        # 2. Retrieval
+        # 2. Retrieval (RAG)
         context = self.retrieve(user_query)
 
-        # 3. Generation
+        # 3. Build prompt with RAG context
         full_prompt = f"""
 {self.system_instruction}
 
@@ -318,13 +340,45 @@ CONTEXT (from official ADS knowledge base):
 USER QUESTION:
 {user_query}
 
+If the question asks about weather or current conditions, use the get_weather_forecast function.
+For all other snow removal questions, use the CONTEXT provided above.
+
 ASSISTANT RESPONSE:
 """
 
-        self._log("GENERATION", "Sending to Gemini 2.5 Flash...")
-        response_text = self.model.generate_content(full_prompt).text
+        self._log("GENERATION", "Sending to Gemini 2.5 Flash with function calling...")
 
-        # 4. Output Security
+        # 4. Initial generation (may trigger function calls)
+        response = self.model.generate_content(full_prompt)
+
+        # 5. Handle function calls if present
+        if response.candidates[0].content.parts:
+            for part in response.candidates[0].content.parts:
+                if hasattr(part, 'function_call') and part.function_call:
+                    function_name = part.function_call.name
+                    function_args = dict(part.function_call.args)
+
+                    self._log("FUNCTION_CALL", f"Gemini requested: {function_name}({function_args})")
+
+                    # Execute the function
+                    if function_name == "get_weather_forecast":
+                        location = function_args.get("location", "")
+                        function_result = self.get_weather_forecast(location)
+
+                        # Send function result back to Gemini
+                        from vertexai.generative_models import Part
+                        function_response = Part.from_function_response(
+                            name=function_name,
+                            response={"result": function_result}
+                        )
+
+                        # Get final response with function result
+                        response = self.model.generate_content([full_prompt, response.candidates[0].content, function_response])
+
+        # 6. Extract final response text
+        response_text = response.text if hasattr(response, 'text') else str(response)
+
+        # 7. Output Security
         if not self.sanitize(response_text, "output"):
             return "❌ [REDACTED] - Response contained sensitive information."
 
