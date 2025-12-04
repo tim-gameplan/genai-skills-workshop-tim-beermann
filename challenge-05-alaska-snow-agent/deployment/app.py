@@ -6,7 +6,7 @@ Streamlit Web Application
 import streamlit as st
 import vertexai
 from google.cloud import bigquery, modelarmor_v1
-from vertexai.generative_models import GenerativeModel, FunctionDeclaration, Tool
+from vertexai.generative_models import GenerativeModel, FunctionDeclaration, Tool, Part, Content
 import os
 import datetime
 import subprocess
@@ -366,14 +366,21 @@ ASSISTANT RESPONSE:
                         function_result = self.get_weather_forecast(location)
 
                         # Send function result back to Gemini
-                        from vertexai.generative_models import Part
-                        function_response = Part.from_function_response(
+                        function_response_part = Part.from_function_response(
                             name=function_name,
                             response={"result": function_result}
                         )
 
+                        # Build proper conversation history with Content objects
+                        user_message = Content(role="user", parts=[Part.from_text(full_prompt)])
+                        function_response_content = Content(role="function", parts=[function_response_part])
+
                         # Get final response with function result
-                        response = self.model.generate_content([full_prompt, response.candidates[0].content, function_response])
+                        response = self.model.generate_content([
+                            user_message,
+                            response.candidates[0].content,
+                            function_response_content
+                        ])
 
         # 6. Extract final response text
         response_text = response.text if hasattr(response, 'text') else str(response)
