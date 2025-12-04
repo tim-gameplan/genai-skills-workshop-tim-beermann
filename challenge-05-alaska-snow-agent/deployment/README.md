@@ -32,9 +32,27 @@ The Docker container now includes:
 
 ## Environment Variables
 
-- `PROJECT_ID` - GCP project ID (auto-detected if not set)
+### Required
+- `PROJECT_ID` - GCP project ID (**required** for Cloud Run deployment)
+
+### Optional
 - `REGION` - GCP region (default: `us-central1`)
 - `DATASET_ID` - BigQuery dataset name (default: `alaska_snow_capstone`)
+- `GOOGLE_MAPS_API_KEY` - Google Geocoding API key (enables location-based queries)
+
+### External API Features
+
+The agent includes integrations with external APIs (matching the notebook implementation):
+
+1. **Google Geocoding API** (`get_coordinates`)
+   - Converts addresses to geographic coordinates
+   - Requires `GOOGLE_MAPS_API_KEY` environment variable
+   - If not set, location-based queries will still work via RAG
+
+2. **National Weather Service API** (`get_weather_forecast`)
+   - Provides weather forecasts for specific locations
+   - No API key required (free public API)
+   - Only covers USA locations
 
 ## Local Testing
 
