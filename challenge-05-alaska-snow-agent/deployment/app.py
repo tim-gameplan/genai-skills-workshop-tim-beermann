@@ -236,6 +236,7 @@ class AlaskaSnowAgentEnhanced:
     def get_coordinates(self, address):
         """
         Convert street address to geographic coordinates using Google Geocoding API.
+        Falls back to hardcoded coordinates for common Alaska cities.
 
         Args:
             address: Street address or location name
@@ -243,8 +244,31 @@ class AlaskaSnowAgentEnhanced:
         Returns:
             tuple: (latitude, longitude) or (None, None) if not found
         """
+        # Fallback coordinates for common Alaska cities
+        # (in case Google Maps API key is not configured)
+        city_coords = {
+            "anchorage": (61.2181, -149.9003),
+            "fairbanks": (64.8378, -147.7164),
+            "juneau": (58.3019, -134.4197),
+            "sitka": (57.0531, -135.3300),
+            "ketchikan": (55.3422, -131.6461),
+            "wasilla": (61.5814, -149.4394),
+            "kenai": (60.5544, -151.2583),
+            "kodiak": (57.7900, -152.4072),
+            "bethel": (60.7922, -161.7558),
+            "nome": (64.5011, -165.4064)
+        }
+
+        # Check if it's a known city (case-insensitive)
+        address_lower = address.lower().strip()
+        for city, coords in city_coords.items():
+            if city in address_lower:
+                self._log("GEOCODING", f"Using fallback coords for {city}: {coords}")
+                return coords
+
+        # If Google Maps API key not configured, can't geocode
         if not self.geocoding_api_key:
-            self._log("WARN", "Google Maps API key not configured")
+            self._log("WARN", f"Google Maps API key not configured, cannot geocode: {address}")
             return None, None
 
         try:
