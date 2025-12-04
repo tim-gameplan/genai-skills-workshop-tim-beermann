@@ -1,0 +1,73 @@
+flowchart TB
+    subgraph USER["👤 User Interface"]
+        Browser[Web Browser]
+    end
+
+    subgraph CLOUDRUN["☁️ Cloud Run"]
+        Streamlit[Streamlit App<br/>app.py]
+        subgraph SECURITY["🛡️ Security Layer"]
+            InputFilter[Input Sanitization]
+            OutputFilter[Output Sanitization]
+        end
+    end
+
+    subgraph VERTEXAI["🤖 Vertex AI"]
+        Gemini[Gemini 2.5 Flash<br/>Response Generation]
+        EmbeddingModel[text-embedding-004<br/>Vector Embeddings]
+    end
+
+    subgraph BIGQUERY["📊 BigQuery"]
+        FAQsRaw[snow_faqs_raw<br/>Source Data]
+        SnowVectors[snow_vectors<br/>Vector Index]
+        Logs[interaction_logs<br/>Audit Trail]
+    end
+
+    subgraph MODELARMOR["🔒 Model Armor"]
+        PIJailbreak[Prompt Injection<br/>& Jailbreak Detection]
+        PIIFilter[PII / SDP<br/>Filtering]
+    end
+
+    subgraph GCS["📁 Cloud Storage"]
+        SourceData[gs://labs.roitraining.com/<br/>alaska-dept-of-snow]
+    end
+
+    %% Data Flow
+    Browser -->|1. User Query| Streamlit
+    Streamlit -->|2. Security Check| InputFilter
+    InputFilter -->|3. Validate| PIJailbreak
+    PIJailbreak -->|4. Safe/Block| InputFilter
+
+    InputFilter -->|5. If Safe| Streamlit
+    Streamlit -->|6. Embed Query| EmbeddingModel
+    EmbeddingModel -->|7. Query Vector| Streamlit
+    Streamlit -->|8. Vector Search| SnowVectors
+    SnowVectors -->|9. Top-3 Results| Streamlit
+
+    Streamlit -->|10. RAG Prompt| Gemini
+    Gemini -->|11. Response| Streamlit
+    Streamlit -->|12. Security Check| OutputFilter
+    OutputFilter -->|13. Validate| PIIFilter
+    PIIFilter -->|14. Clean/Redact| OutputFilter
+
+    OutputFilter -->|15. Final Response| Streamlit
+    Streamlit -->|16. Display| Browser
+    Streamlit -->|17. Log| Logs
+
+    %% Setup (Dashed Lines)
+    SourceData -.->|Initial Load| FAQsRaw
+    FAQsRaw -.->|Generate Embeddings| SnowVectors
+
+    %% Styling
+    classDef userStyle fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef cloudrunStyle fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    classDef vertexStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef bqStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef armorStyle fill:#ffebee,stroke:#c62828,stroke-width:2px
+    classDef gcsStyle fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+
+    class Browser userStyle
+    class Streamlit,InputFilter,OutputFilter cloudrunStyle
+    class Gemini,EmbeddingModel vertexStyle
+    class FAQsRaw,SnowVectors,Logs bqStyle
+    class PIJailbreak,PIIFilter armorStyle
+    class SourceData gcsStyle
