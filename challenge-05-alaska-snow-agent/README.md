@@ -33,7 +33,7 @@ challenge-05-alaska-snow-agent/
 │   ├── setup_test_resources.py # Quick setup for testing
 │   ├── run_docker_local.sh    # Local Docker testing script
 │   ├── entrypoint.sh          # Container entrypoint
-│   └── docs/                   # Additional documentation
+│   └── docs/                   # Additional documentation (local-only, not in git)
 │       ├── QUICKSTART.md      # 5-minute setup guide
 │       ├── INDEX.md           # Directory navigation
 │       ├── DEPLOYMENT.md      # Comprehensive deployment guide
@@ -163,13 +163,15 @@ See `diagrams/` for detailed architecture diagrams.
 | Document | Purpose |
 |----------|---------|
 | `deployment/README.md` | Deployment package overview |
-| `deployment/docs/QUICKSTART.md` | 5-minute setup guide |
-| `deployment/docs/DEPLOYMENT.md` | Comprehensive deployment instructions |
-| `deployment/docs/INDEX.md` | Directory navigation guide |
-| `deployment/docs/NOTEBOOK_COMPARISON.md` | Compare notebook versions |
+| `deployment/docs/QUICKSTART.md` | 5-minute setup guide *(local-only)* |
+| `deployment/docs/DEPLOYMENT.md` | Comprehensive deployment instructions *(local-only)* |
+| `deployment/docs/INDEX.md` | Directory navigation guide *(local-only)* |
+| `deployment/docs/NOTEBOOK_COMPARISON.md` | Compare notebook versions *(local-only)* |
 | `notebook/README.md` | Jupyter notebook documentation |
 | `diagrams/README.md` | Architecture diagram guide |
 | `screenshots/README.md` | Application screenshots |
+
+**Note**: Files marked *(local-only)* are not tracked in git (see `.gitignore`).
 
 ## Testing
 
